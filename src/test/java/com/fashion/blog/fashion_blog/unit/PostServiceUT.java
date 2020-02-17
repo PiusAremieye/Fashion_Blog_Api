@@ -13,10 +13,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.util.Arrays;
 import java.util.Optional;
-
 import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 
@@ -43,6 +40,7 @@ public class PostServiceUT {
         post2 = new Post("shoes", "nice products");
         post1.setId(1);
         post2.setId(2);
+
     }
 
     @Test
@@ -68,11 +66,22 @@ public class PostServiceUT {
         Mockito.verify(postRespository, Mockito.times(2)).findById(post1.getId());
     }
 
+//    @Test
+//    public void be_able_to_view_all_post(){
+//        Mockito.when(postRespository.findAll(Pageable.unpaged())).thenReturn(post1);
+//        assertThat(postServiceImplementation.viewAllPost(Pageable.unpaged()).getTotalElements(), is(2));
+//        Mockito.verify(postRespository, Mockito.times(1)).findAll();
+//    }
+
     @Test
-    public void be_able_to_view_all_post(){
-        Mockito.when(postRespository.findAll()).thenReturn(Arrays.asList(post1, post2));
-        assertThat(postServiceImplementation.viewAllPost().size(), is(2));
-        Mockito.verify(postRespository, Mockito.times(1)).findAll();
+    public void be_able_to_update_a_post(){
+        Post newPost = new Post("hats", "nice hats");
+        Mockito.when(postRespository.findById(post2.getId())).thenReturn(Optional.of(post2));
+        post2.setTitle(newPost.getTitle());
+        post2.setCategory(newPost.getCategory());
+        Mockito.when(postRespository.save(post2)).thenReturn(post2);
+        assertThat(postServiceImplementation.updateAPost(newPost, post2.getId()), is(post2));
+        Mockito.verify(postRespository, Mockito.times(1)).findById(post2.getId());
     }
 
     @Test

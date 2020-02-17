@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-
 @Service
 public class CommentServiceImplementation implements CommentService {
 
@@ -44,21 +42,42 @@ public class CommentServiceImplementation implements CommentService {
     }
 
     @Override
-    public Comment viewAComment(Integer commentId){
-        return commentRespository.findById(commentId).orElse(null);
-    }
-
-    @Override
-    public List<Comment> viewAllComment(){
-        return commentRespository.findAll();
-    }
-
-    @Override
-    public Object deleteAComment(Integer id){
-        if (commentRespository.existsById(id)){
-            commentRespository.deleteById(id);
-            return true;
+    public Object viewAComment(Integer postId, Integer commentId){
+        Post post = postRespository.findById(postId).orElse(null);
+        if (post != null){
+            Comment comment = commentRespository.findById(commentId).orElse(null);
+            if (comment != null){
+                if(comment.getPost().getId().equals(post.getId())){
+                    return commentRespository.save(comment);
+                }
+            }
+            return "noCommentId";
         }
-        return false;
+        return "noPostId";
+    }
+
+    @Override
+    public Page<Comment> viewAllComment(Pageable pageable){
+        return commentRespository.findAll(pageable);
+    }
+
+    @Override
+    public Page<Comment> viewAllCommentsByComment(Pageable pageable, String comment) {
+        if (comment.isBlank()){
+            return null;
+        }
+        return commentRespository.findAllByComment(pageable, comment);
+    }
+
+    @Override
+    public Object deleteAComment(Integer postId, Integer commentId){
+        if (postRespository.existsById(postId)){
+            if (commentRespository.existsById(commentId)){
+                commentRespository.deleteById(commentId);
+                return "deleted";
+            }
+            return "noCommentId";
+        }
+        return "noPostId";
     }
 }

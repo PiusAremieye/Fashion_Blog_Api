@@ -1,10 +1,8 @@
 package com.fashion.blog.fashion_blog.controller;
 
 import com.fashion.blog.fashion_blog.model.Comment;
-import com.fashion.blog.fashion_blog.model.Post;
 import com.fashion.blog.fashion_blog.response.ApiExceptionHandler;
 import com.fashion.blog.fashion_blog.service.CommentService;
-import com.fashion.blog.fashion_blog.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
@@ -21,12 +18,9 @@ public class CommentController {
 
     private CommentService commentService;
 
-    private PostService postService;
-
     @Autowired
-    public CommentController(CommentService commentService, PostService postService){
+    public CommentController(CommentService commentService){
         this.commentService = commentService;
-        this.postService = postService;
     }
 
     @RequestMapping(path = "/{postId}/comments", method = RequestMethod.POST)
@@ -40,7 +34,7 @@ public class CommentController {
             return new ResponseEntity<>(arh, HttpStatus.CREATED);
         }
         arh = new ApiExceptionHandler<>(HttpStatus.BAD_REQUEST);
-        arh.setError("Cannot create comment");
+        arh.setError("Cannot make a comment");
         arh.setMessage("Post does not exists");
         return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
     }
@@ -66,27 +60,33 @@ public class CommentController {
         return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
     }
 
-    @RequestMapping(path = "/comments/{id}", method = RequestMethod.GET)
-    public ResponseEntity<ApiExceptionHandler<Comment>> getAComment(@PathVariable(value = "id") Integer id){
-        Comment comment = commentService.viewAComment(id);
-        ApiExceptionHandler<Comment> arh;
-        if (comment != null){
-            arh = new ApiExceptionHandler<>(HttpStatus.OK);
-            arh.setMessage("Comment retrieved Successfully");
-            arh.setData(comment);
-            return new ResponseEntity<>(arh, HttpStatus.OK);
+    @RequestMapping(path = "/{postId}/comments/{commentId}", method = RequestMethod.GET)
+    public ResponseEntity<ApiExceptionHandler<Object>> getAComment(@PathVariable(value = "postId") Integer postId, @PathVariable(value = "commentId") Integer commentId){
+        Object obj = commentService.viewAComment(postId, commentId);
+        ApiExceptionHandler<Object> arh;
+        if (!obj.equals("noPostId")){
+            if (!obj.equals("noCommentId")) {
+                arh = new ApiExceptionHandler<>(HttpStatus.OK);
+                arh.setMessage("Comment retrieved Successfully");
+                arh.setData(obj);
+                return new ResponseEntity<>(arh, HttpStatus.OK);
+            }
+            arh = new ApiExceptionHandler<>(HttpStatus.BAD_REQUEST);
+            arh.setError("Do not have comment of id : " + commentId);
+            arh.setMessage("Comment does not exists");
+            return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
         }
         arh = new ApiExceptionHandler<>(HttpStatus.BAD_REQUEST);
-        arh.setError("Do not have comment of id : " + id);
-        arh.setMessage("Comment does not exists");
+        arh.setError("Do not have post of id : " + postId);
+        arh.setMessage("Post does not exists");
         return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
     }
 
     @RequestMapping(path = "/comments", method = RequestMethod.GET)
-    public ResponseEntity<ApiExceptionHandler<List<Comment>>> getAllComment(){
-        List<Comment> comment = commentService.viewAllComment();
-        ApiExceptionHandler<List<Comment>> arh;
-        if (!comment.isEmpty()){
+    public ResponseEntity<ApiExceptionHandler<Page<Comment>>> getAllComment(Pageable pageable){
+        Page<Comment> comment = commentService.viewAllComment(pageable);
+        ApiExceptionHandler<Page<Comment>> arh;
+        if (comment.hasContent()){
             arh = new ApiExceptionHandler<>(HttpStatus.OK);
             arh.setMessage("All comment(s) retrieved Successfully");
             arh.setData(comment);
@@ -97,18 +97,46 @@ public class CommentController {
         return new ResponseEntity<>(arh, HttpStatus.OK);
     }
 
-    @RequestMapping(path = "/comments/{id}", method = RequestMethod.DELETE)
-    public ResponseEntity<ApiExceptionHandler<Comment>> deleteComment(@PathVariable(name = "id") Integer id){
-        Object bool = commentService.deleteAComment(id);
-        ApiExceptionHandler<Comment> arh;
-        if (bool.equals(true)){
-            arh = new ApiExceptionHandler<>(HttpStatus.OK);
-            arh.setMessage("Comment deleted successfully");
-            return new ResponseEntity<>(arh, HttpStatus.OK);
+    @RequestMapping(path = "/findComment", method = RequestMethod.GET)
+    public ResponseEntity<ApiExceptionHandler<Page<Comment>>> getAllCommentsByAComment(Pageable pageable, @RequestParam(value = "comment") String comment){
+        Page<Comment> allComments = commentService.viewAllCommentsByComment(pageable, comment);
+        ApiExceptionHandler<Page<Comment>> arh;
+        if (allComments != null){
+            if(allComments.hasContent()) {
+                arh = new ApiExceptionHandler<>(HttpStatus.OK);
+                arh.setMessage("All " + "'"+comment+"'" + " retrieved successfully");
+                arh.setData(allComments);
+                return new ResponseEntity<>(arh, HttpStatus.OK);
+            }
+            arh = new ApiExceptionHandler<>(HttpStatus.BAD_REQUEST);
+            arh.setMessage("Cannot find comment(s) of "+"'"+comment+"'");
+            arh.setError("No data available for this endpoint");
+            return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
         }
         arh = new ApiExceptionHandler<>(HttpStatus.BAD_REQUEST);
-        arh.setError("Comment of id : "+ id +" cannot be deleted");
-        arh.setDebugMessage("Cannot deleted an invalid id, please specify a correct id");
+        arh.setMessage("Searching with comment should not be blank");
+        arh.setError("No data available for this endpoint");
+        return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
+    }
+
+    @RequestMapping(path = "/{postId}/comments/{commentId}", method = RequestMethod.DELETE)
+    public ResponseEntity<ApiExceptionHandler<Object>> deleteComment(@PathVariable(name = "postId") Integer postId, @PathVariable(name = "commentId") Integer commentId){
+        Object bool = commentService.deleteAComment(postId, commentId);
+        ApiExceptionHandler<Object> arh;
+        if (!bool.equals("noPostId")){
+            if (!bool.equals("noCommentId") || bool.equals("deleted")){
+                arh = new ApiExceptionHandler<>(HttpStatus.OK);
+                arh.setMessage("Comment deleted successfully");
+                return new ResponseEntity<>(arh, HttpStatus.OK);
+            }
+            arh = new ApiExceptionHandler<>(HttpStatus.BAD_REQUEST);
+            arh.setError("Comment of id : "+ commentId +" cannot be deleted");
+            arh.setDebugMessage("Cannot delete an invalid comment, please specify the correct comment");
+            return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
+        }
+        arh = new ApiExceptionHandler<>(HttpStatus.BAD_REQUEST);
+        arh.setError("Post of id : "+ postId +" does not exists");
+        arh.setDebugMessage("Cannot delete an invalid post, please specify the correct post");
         return new ResponseEntity<>(arh, HttpStatus.BAD_REQUEST);
     }
 

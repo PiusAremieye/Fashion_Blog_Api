@@ -3,9 +3,8 @@ package com.fashion.blog.fashion_blog.service;
 import com.fashion.blog.fashion_blog.model.Post;
 import com.fashion.blog.fashion_blog.responsitory.PostRespository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class PostServiceImplementation implements PostService {
@@ -28,43 +27,57 @@ public class PostServiceImplementation implements PostService {
     }
 
     @Override
-    public List<Post> viewAllPost() {
-        return postRespository.findAll();
+    public Page<Post> viewAllPost(Pageable pageable) {
+        return postRespository.findAll(pageable);
     }
 
     @Override
-    public Object deletePost(Integer id){
-        if (postRespository.existsById(id)){
-            postRespository.deleteById(id);
-            return true;
+    public Post updateAPost(Post post, Integer id){
+        Post oldPost = postRespository.findById(id).orElse(null);
+        if (oldPost != null){
+            oldPost.setTitle(post.getTitle());
+            oldPost.setCategory(post.getCategory());
+            return postRespository.save(oldPost);
         }
-        return false;
+        return null;
     }
 
     @Override
-    public List<Post> findAPostByTitle(String title){
-        return postRespository.findByTitle(title);
+    public Boolean deletePost(Integer id){
+        Boolean res = postRespository.existsById(id);
+        if (res){
+            postRespository.deleteById(id);
+        }
+        return res;
     }
 
     @Override
-    public Object likePost(Integer id){
+    public Page<Post> findAllPostsByTitle(Pageable pageable, String title){
+        if (title.isBlank()){
+            return null;
+        }
+        return postRespository.findAllByTitle(pageable, title);
+    }
+
+    @Override
+    public Post likePost(Integer id){
         Post postToLike = postRespository.findById(id).orElse(null);
         if (postToLike != null){
             int likes = postToLike.getLikes();
             postToLike.setLikes(++likes);
             return postRespository.save(postToLike);
         }
-        return false;
+        return null;
     }
 
     @Override
-    public Object disLikePost(Integer id){
+    public Post disLikePost(Integer id){
         Post postTodisLike = postRespository.findById(id).orElse(null);
         if (postTodisLike != null){
             int disLikes = postTodisLike.getDisLikes();
             postTodisLike.setDisLikes(++disLikes);
             return postRespository.save(postTodisLike);
         }
-        return false;
+        return null;
     }
 }

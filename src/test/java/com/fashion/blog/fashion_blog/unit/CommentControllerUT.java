@@ -4,9 +4,7 @@ import com.fashion.blog.fashion_blog.controller.CommentController;
 import com.fashion.blog.fashion_blog.model.Comment;
 import com.fashion.blog.fashion_blog.model.Post;
 import com.fashion.blog.fashion_blog.response.ApiExceptionHandler;
-import com.fashion.blog.fashion_blog.responsitory.CommentRespository;
 import com.fashion.blog.fashion_blog.service.CommentService;
-import com.fashion.blog.fashion_blog.service.CommentServiceImplementation;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -70,29 +68,27 @@ public class CommentControllerUT {
 
     @Test
     public void be_able_to_make_a_get_request(){
-        Mockito.when(commentService.viewAComment(comment1.getId())).thenReturn(comment1);
-        ResponseEntity<ApiExceptionHandler<Comment>> comment = commentController.getAComment(comment1.getId());
+        Mockito.when(commentService.viewAComment(post1.getId(), comment1.getId())).thenReturn(comment1);
+        ResponseEntity<ApiExceptionHandler<Object>> comment = commentController.getAComment(post1.getId(), comment1.getId());
         assertThat(comment.getBody().getData(), is(comment1));
         assertThat(comment.getStatusCode(), is(HttpStatus.OK));
     }
 
-    @Test
-    public void be_able_to_view_all_comments(){
-        Mockito.when(commentService.viewAllComment()).thenReturn(Arrays.asList(comment1, comment2));
-        ResponseEntity<ApiExceptionHandler<List<Comment>>> allComment = commentController.getAllComment();
-        assertThat(allComment.getBody().getData().size(), is(2));
-        assertThat(allComment.getStatusCode(), is(HttpStatus.OK));
-    }
+//    @Test
+//    public void be_able_to_view_all_comments(){
+//        Mockito.when(commentService.viewAllComment()).thenReturn(Arrays.asList(comment1, comment2));
+//        ResponseEntity<ApiExceptionHandler<List<Comment>>> allComment = commentController.getAllComment();
+//        assertThat(allComment.getBody().getData().size(), is(2));
+//        assertThat(allComment.getStatusCode(), is(HttpStatus.OK));
+//    }
 
-    @Test
-    public void be_able_to_view_comments_of_a_post(){
-
-    }
+//    @Test
+//    public void be_able_to_view_comments_of_a_post(){}
 
     @Test
     public void be_able_to_delete_a_comment(){
-        Mockito.when(commentService.deleteAComment(comment1.getId())).thenReturn(true);
-        ResponseEntity<ApiExceptionHandler<Comment>> deletedComment = commentController.deleteComment(comment1.getId());
+        Mockito.when(commentService.deleteAComment(post1.getId(), comment1.getId())).thenReturn(true);
+        ResponseEntity<ApiExceptionHandler<Object>> deletedComment = commentController.deleteComment(post1.getId(), comment1.getId());
         assertThat(deletedComment.getStatusCode(), is(HttpStatus.OK));
         assertThat(deletedComment.getBody().getMessage(), is("Comment deleted successfully"));
     }

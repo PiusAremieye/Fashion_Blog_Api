@@ -79,24 +79,28 @@ public class CommentServiceUT {
 
     @Test
     public void get_a_comment(){
+        Mockito.when(postRespository.findById(post1.getId())).thenReturn(Optional.of(post1));
         Mockito.when(commentRespository.findById(comment1.getId())).thenReturn(Optional.of(comment1));
-        assertThat(commentServiceImplementation.viewAComment(comment1.getId()), is(comment1));
+        Mockito.when(commentRespository.save(comment1)).thenReturn(comment1);
+        assertThat(commentServiceImplementation.viewAComment(post1.getId(), comment1.getId()), is(comment1));
+        Mockito.verify(postRespository, Mockito.times(1)).findById(post1.getId());
         Mockito.verify(commentRespository, Mockito.times(1)).findById(comment1.getId());
+        Mockito.verify(commentRespository, Mockito.times(1)).save(comment1);
     }
 
-    @Test
-    public void get_all_comments(){
-        Mockito.when(commentRespository.findAll()).thenReturn(Arrays.asList(comment1, comment2));
-        assertThat(commentServiceImplementation.viewAllComment().size(), is(2));
-        Mockito.verify(commentRespository, Mockito.times(1)).findAll();
-    }
+//    @Test
+//    public void get_all_comments(){
+//        Mockito.when(commentRespository.findAll()).thenReturn(Arrays.asList(comment1, comment2));
+//        assertThat(commentServiceImplementation.viewAllComment().size(), is(2));
+//        Mockito.verify(commentRespository, Mockito.times(1)).findAll();
+//    }
 
     @Test
     public void delete_a_comment(){
+        Mockito.when(postRespository.existsById(post1.getId())).thenReturn(true);
         Mockito.when(commentRespository.existsById(comment2.getId())).thenReturn(true);
-        assertThat(commentServiceImplementation.deleteAComment(comment2.getId()), is(true));
+        assertThat(commentServiceImplementation.deleteAComment(post1.getId(), comment2.getId()), is("deleted"));
+        Mockito.verify(postRespository, Mockito.times(1)).existsById(post1.getId());
         Mockito.verify(commentRespository, Mockito.times(1)).existsById(comment2.getId());
     }
-
-
 }
